@@ -30,6 +30,7 @@ import org.eclipse.swtchart.ILineSeries.PlotSymbolType;
 import org.eclipse.swtchart.ISeries.SeriesType;
 import org.eclipse.swtchart.LineStyle;
 import org.eclipse.swtchart.Range;
+import org.eclipse.swtchart.model.DoubleArraySeriesModel;
 
 import name.abuchen.portfolio.ui.UIConstants;
 import name.abuchen.portfolio.ui.util.Colors;
@@ -209,16 +210,36 @@ public class TimelineChart extends Chart // NOSONAR
         return addDateSeries(id, dates, values, color, false, label);
     }
 
+    public static class TimelineSeriesModel extends DoubleArraySeriesModel
+    {
+        private final double[] xdata;
+        private final double[] ydata;
+
+        public TimelineSeriesModel(double[] xSeries, double[] ySeries)
+        {
+            super(xSeries, ySeries);
+
+            xdata = xSeries;
+            ydata = ySeries;
+        }
+
+        public double[] getXData()
+        {
+            return xdata;
+        }
+    }
+
     private ILineSeries addDateSeries(String id, LocalDate[] dates, double[] values, Color color, boolean showArea,
                     String label)
     {
         ILineSeries lineSeries = (ILineSeries) getSeriesSet().createSeries(SeriesType.LINE, id);
         lineSeries.setDescription(label);
-        lineSeries.setXDateSeries(toJavaUtilDate(dates));
+        lineSeries.setDataModel(new TimelineSeriesModel(toEpochDay(dates), values));
+        // lineSeries.setXDateSeries(toJavaUtilDate(dates));
         lineSeries.enableArea(showArea);
         lineSeries.setLineWidth(2);
         lineSeries.setSymbolType(PlotSymbolType.NONE);
-        lineSeries.setYSeries(values);
+        // lineSeries.setYSeries(values);
         lineSeries.setLineColor(color);
         lineSeries.setAntialias(SWT.ON);
         return lineSeries;
@@ -228,8 +249,9 @@ public class TimelineChart extends Chart // NOSONAR
     {
         IBarSeries barSeries = (IBarSeries) getSeriesSet().createSeries(SeriesType.BAR, id);
         barSeries.setDescription(label);
-        barSeries.setXDateSeries(toJavaUtilDate(dates));
-        barSeries.setYSeries(values);
+        barSeries.setDataModel(new TimelineSeriesModel(toEpochDay(dates), values));
+        // barSeries.setXDateSeries(toJavaUtilDate(dates));
+        // barSeries.setYSeries(values);
         barSeries.setBarColor(Colors.DARK_GRAY);
         barSeries.setBarPadding(100);
 
@@ -352,6 +374,14 @@ public class TimelineChart extends Chart // NOSONAR
         Date[] answer = new Date[dates.length];
         for (int ii = 0; ii < answer.length; ii++)
             answer[ii] = Date.from(dates[ii].atStartOfDay().atZone(zoneId).toInstant());
+        return answer;
+    }
+
+    public static double[] toEpochDay(LocalDate[] dates)
+    {
+        double[] answer = new double[dates.length];
+        for (int ii = 0; ii < answer.length; ii++)
+            answer[ii] = dates[ii].toEpochDay();
         return answer;
     }
 

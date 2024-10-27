@@ -2,18 +2,14 @@ package name.abuchen.portfolio.ui.views;
 
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -76,6 +72,7 @@ import name.abuchen.portfolio.ui.util.Colors;
 import name.abuchen.portfolio.ui.util.DropDown;
 import name.abuchen.portfolio.ui.util.SimpleAction;
 import name.abuchen.portfolio.ui.util.chart.TimelineChart;
+import name.abuchen.portfolio.ui.util.chart.TimelineChart.TimelineSeriesModel;
 import name.abuchen.portfolio.ui.util.chart.TimelineChartToolTip;
 import name.abuchen.portfolio.ui.views.securitychart.SharesHeldChartSeries;
 import name.abuchen.portfolio.util.FormatHelper;
@@ -563,12 +560,8 @@ public class SecuritiesChart
         toolTip.overrideValueFormat(Messages.LabelChartDetailIndicatorMacdSignal, calculatedFormat);
 
         toolTip.addExtraInfo((composite, focus) -> {
-            if (focus instanceof Date focusDate)
+            if (focus instanceof LocalDate date)
             {
-                Instant instant = focusDate.toInstant();
-                ZonedDateTime zdt = instant.atZone(ZoneId.systemDefault());
-                LocalDate date = zdt.toLocalDate();
-
                 Interval displayInterval = Interval.of(date.minusDays(5), date.plusDays(5));
 
                 customTooltipEvents.stream() //
@@ -644,15 +637,19 @@ public class SecuritiesChart
         }
     }
 
-    private void configureSeriesPainter(ILineSeries series, Date[] dates, double[] values, Color color, int lineWidth,
+    private void configureSeriesPainter(ILineSeries series, LocalDate[] dates, double[] values, Color color,
+                    int lineWidth,
                     LineStyle lineStyle, boolean enableArea, boolean visibleInLegend)
     {
         if (lineWidth != 0)
             series.setLineWidth(lineWidth);
+
+        series.setDataModel(new TimelineSeriesModel(TimelineChart.toEpochDay(dates), values));
+
         series.setLineStyle(lineStyle);
-        series.setXDateSeries(dates);
+        // series.setXDateSeries(dates);
         series.enableArea(enableArea);
-        series.setYSeries(values);
+        // series.setYSeries(values);
         series.setAntialias(swtAntialias);
 
         if (color != null)
@@ -939,8 +936,6 @@ public class SecuritiesChart
                 }
             }
 
-            Date[] javaDates = TimelineChart.toJavaUtilDate(dates);
-
             if (showAreaRelativeToFirstQuote)
             {
 
@@ -948,21 +943,21 @@ public class SecuritiesChart
                                 Messages.LabelChartDetailChartDevelopmentClosing + "Negative"); //$NON-NLS-1$
                 lineSeries2ndNegative.setSymbolType(PlotSymbolType.NONE);
                 lineSeries2ndNegative.setYAxisId(1);
-                configureSeriesPainter(lineSeries2ndNegative, javaDates, valuesRelativeNegative, colorQuoteAreaNegative,
+                configureSeriesPainter(lineSeries2ndNegative, dates, valuesRelativeNegative, colorQuoteAreaNegative,
                                 1, LineStyle.SOLID, true, false);
 
                 ILineSeries lineSeries2ndPositive = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE,
                                 Messages.LabelChartDetailChartDevelopmentClosing + "Positive"); //$NON-NLS-1$
                 lineSeries2ndPositive.setSymbolType(PlotSymbolType.NONE);
                 lineSeries2ndPositive.setYAxisId(1);
-                configureSeriesPainter(lineSeries2ndPositive, javaDates, valuesRelativePositive, colorQuoteAreaPositive,
+                configureSeriesPainter(lineSeries2ndPositive, dates, valuesRelativePositive, colorQuoteAreaPositive,
                                 1, LineStyle.SOLID, true, false);
             }
 
             ILineSeries lineSeries = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE,
                             Messages.ColumnQuote);
             lineSeries.setSymbolType(PlotSymbolType.NONE);
-            configureSeriesPainter(lineSeries, javaDates, values, colorQuote, 2, LineStyle.SOLID,
+            configureSeriesPainter(lineSeries, dates, values, colorQuote, 2, LineStyle.SOLID,
                             !showAreaRelativeToFirstQuote, false);
 
             chart.adjustRange();
@@ -1164,12 +1159,15 @@ public class SecuritiesChart
             values[0] = values[1] = limitAttribute.getValue() / Values.Quote.divider();
 
             ILineSeries lineSeriesLimit = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, lineID);
-            lineSeriesLimit.setXDateSeries(TimelineChart.toJavaUtilDate(dates));
+
+            lineSeriesLimit.setDataModel(new TimelineSeriesModel(TimelineChart.toEpochDay(dates), values));
+
+            // lineSeriesLimit.setXDateSeries(TimelineChart.toJavaUtilDate(dates));
             lineSeriesLimit.setLineWidth(2);
             lineSeriesLimit.setLineStyle(LineStyle.DASH);
             lineSeriesLimit.enableArea(false);
             lineSeriesLimit.setSymbolType(PlotSymbolType.NONE);
-            lineSeriesLimit.setYSeries(values);
+            // lineSeriesLimit.setYSeries(values);
             lineSeriesLimit.setAntialias(swtAntialias);
             lineSeriesLimit.setLineColor(Colors.ICON_ORANGE);
             lineSeriesLimit.setYAxisId(0);
@@ -1187,11 +1185,14 @@ public class SecuritiesChart
         String lineID = smaSeries + " (" + smaDaysWording + ")"; //$NON-NLS-1$ //$NON-NLS-2$
 
         ILineSeries lineSeriesSMA = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, lineID);
-        lineSeriesSMA.setXDateSeries(smaLines.getDates());
+        lineSeriesSMA.setDataModel(
+                        new TimelineSeriesModel(TimelineChart.toEpochDay(smaLines.getDates()), smaLines.getValues()));
+
+        // lineSeriesSMA.setXDateSeries(smaLines.getDates());
         lineSeriesSMA.setLineWidth(2);
         lineSeriesSMA.enableArea(false);
         lineSeriesSMA.setSymbolType(PlotSymbolType.NONE);
-        lineSeriesSMA.setYSeries(smaLines.getValues());
+        // lineSeriesSMA.setYSeries(smaLines.getValues());
         lineSeriesSMA.setAntialias(swtAntialias);
         lineSeriesSMA.setLineColor(smaColor);
         lineSeriesSMA.setYAxisId(0);
@@ -1208,11 +1209,13 @@ public class SecuritiesChart
         String lineID = emaSeries + " (" + emaDaysWording + ")"; //$NON-NLS-1$ //$NON-NLS-2$
 
         ILineSeries lineSeriesEMA = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, lineID);
-        lineSeriesEMA.setXDateSeries(emaLines.getDates());
+        lineSeriesEMA.setDataModel(
+                        new TimelineSeriesModel(TimelineChart.toEpochDay(emaLines.getDates()), emaLines.getValues()));
+        // lineSeriesEMA.setXDateSeries(emaLines.getDates());
         lineSeriesEMA.setLineWidth(2);
         lineSeriesEMA.enableArea(false);
         lineSeriesEMA.setSymbolType(PlotSymbolType.NONE);
-        lineSeriesEMA.setYSeries(emaLines.getValues());
+        // lineSeriesEMA.setYSeries(emaLines.getValues());
         lineSeriesEMA.setAntialias(swtAntialias);
         lineSeriesEMA.setLineColor(emaColor);
         lineSeriesEMA.setYAxisId(0);
@@ -1267,9 +1270,8 @@ public class SecuritiesChart
         }
         else
         {
-            Date[] dates = transactions.stream().map(PortfolioTransaction::getDateTime)
-                            .map(d -> Date.from(d.atZone(ZoneId.systemDefault()).toInstant()))
-                            .toArray(size -> new Date[size]);
+            LocalDate[] dates = transactions.stream().map(PortfolioTransaction::getDateTime).map(d -> d.toLocalDate())
+                            .toArray(size -> new LocalDate[size]);
 
             double[] values = transactions.stream().mapToDouble(
                             t -> t.getGrossPricePerShare(converter.with(t.getSecurity().getCurrencyCode())).getAmount()
@@ -1317,7 +1319,7 @@ public class SecuritiesChart
                         if (t == null)
                             continue;
 
-                        int x = xAxis.getPixelCoordinate(dates[index].getTime());
+                        int x = xAxis.getPixelCoordinate(dates[index].toEpochDay());
                         int y = yAxis.getPixelCoordinate(values[index]);
 
                         String label = Values.Share.format(t.getType().isPurchase() ? t.getShares() : -t.getShares());
@@ -1366,9 +1368,8 @@ public class SecuritiesChart
         }
         else
         {
-            Date[] dates = dividends.stream().map(AccountTransaction::getDateTime)
-                            .map(d -> Date.from(d.atZone(ZoneId.systemDefault()).toInstant()))
-                            .toArray(size -> new Date[size]);
+            LocalDate[] dates = dividends.stream().map(AccountTransaction::getDateTime).map(d -> d.toLocalDate())
+                            .toArray(size -> new LocalDate[size]);
 
             IAxis yAxis1st = chart.getAxisSet().getYAxis(0);
 
@@ -1422,7 +1423,7 @@ public class SecuritiesChart
 
                     for (int index = 0; index < dates.length; index++)
                     {
-                        int x = xAxis.getPixelCoordinate(dates[index].getTime());
+                        int x = xAxis.getPixelCoordinate(dates[index].toEpochDay());
                         int y = yAxis.getPixelCoordinate(values[index]);
 
                         String label = getDividendLabel(dividends.get(index));
@@ -1513,14 +1514,15 @@ public class SecuritiesChart
         else
         {
             String valueFormat = Values.Quote.format(price.getValue());
-            Date zonedDate = Date.from(eventDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            LocalDate zonedDate = eventDate;
 
             ILineSeries inner = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE, seriesLabel);
             inner.setYAxisId(0);
             inner.setSymbolType(plotSymbolType);
             inner.setSymbolSize(6);
             inner.setSymbolColor(color);
-            configureSeriesPainter(inner, new Date[] { zonedDate }, new double[] { value }, color, 0, LineStyle.NONE,
+            configureSeriesPainter(inner, new LocalDate[] { zonedDate }, new double[] { value }, color, 0,
+                            LineStyle.NONE,
                             false, true);
 
             if (chartConfig.contains(ChartDetails.SHOW_DATA_EXTREMES_LABEL))
@@ -1532,7 +1534,7 @@ public class SecuritiesChart
                     IAxis xAxis = chart.getAxisSet().getXAxis(0);
                     IAxis yAxis = chart.getAxisSet().getYAxis(0);
 
-                    int x = xAxis.getPixelCoordinate(zonedDate.getTime());
+                    int x = xAxis.getPixelCoordinate(zonedDate.toEpochDay());
                     int y = yAxis.getPixelCoordinate(value);
                     Point textExtent = event.gc.textExtent(valueFormat);
                     int labelWidth = textExtent.x;
@@ -1566,11 +1568,15 @@ public class SecuritiesChart
 
         ILineSeries lineSeriesBollingerBandsLowerBand = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE,
                         Messages.LabelChartDetailIndicatorBollingerBandsLower);
-        lineSeriesBollingerBandsLowerBand.setXDateSeries(lowerBand.getDates());
+
+        lineSeriesBollingerBandsLowerBand.setDataModel(
+                        new TimelineSeriesModel(TimelineChart.toEpochDay(lowerBand.getDates()), lowerBand.getValues()));
+
+        // lineSeriesBollingerBandsLowerBand.setXDateSeries(lowerBand.getDates());
         lineSeriesBollingerBandsLowerBand.setLineStyle(LineStyle.SOLID);
         lineSeriesBollingerBandsLowerBand.setLineWidth(2);
         lineSeriesBollingerBandsLowerBand.setSymbolType(PlotSymbolType.NONE);
-        lineSeriesBollingerBandsLowerBand.setYSeries(lowerBand.getValues());
+        // lineSeriesBollingerBandsLowerBand.setYSeries(lowerBand.getValues());
         lineSeriesBollingerBandsLowerBand.setAntialias(swtAntialias);
         lineSeriesBollingerBandsLowerBand.setLineColor(colorBollingerBands);
         lineSeriesBollingerBandsLowerBand.setYAxisId(0);
@@ -1579,11 +1585,15 @@ public class SecuritiesChart
         ChartLineSeriesAxes middleBand = bands.getMiddleBand();
         ILineSeries lineSeriesBollingerBandsMiddleBand = (ILineSeries) chart.getSeriesSet()
                         .createSeries(SeriesType.LINE, Messages.LabelChartDetailIndicatorBollingerBands);
-        lineSeriesBollingerBandsMiddleBand.setXDateSeries(middleBand.getDates());
+
+        lineSeriesBollingerBandsMiddleBand.setDataModel(new TimelineSeriesModel(
+                        TimelineChart.toEpochDay(middleBand.getDates()), middleBand.getValues()));
+
+        // lineSeriesBollingerBandsMiddleBand.setXDateSeries(middleBand.getDates());
         lineSeriesBollingerBandsMiddleBand.setLineWidth(2);
         lineSeriesBollingerBandsMiddleBand.setLineStyle(LineStyle.DOT);
         lineSeriesBollingerBandsMiddleBand.setSymbolType(PlotSymbolType.NONE);
-        lineSeriesBollingerBandsMiddleBand.setYSeries(middleBand.getValues());
+        // lineSeriesBollingerBandsMiddleBand.setYSeries(middleBand.getValues());
         lineSeriesBollingerBandsMiddleBand.setAntialias(swtAntialias);
         lineSeriesBollingerBandsMiddleBand.setLineColor(colorBollingerBands);
         lineSeriesBollingerBandsMiddleBand.setYAxisId(0);
@@ -1592,11 +1602,15 @@ public class SecuritiesChart
         ChartLineSeriesAxes upperBand = bands.getUpperBand();
         ILineSeries lineSeriesBollingerBandsUpperBand = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE,
                         Messages.LabelChartDetailIndicatorBollingerBandsUpper);
-        lineSeriesBollingerBandsUpperBand.setXDateSeries(upperBand.getDates());
+
+        lineSeriesBollingerBandsUpperBand.setDataModel(
+                        new TimelineSeriesModel(TimelineChart.toEpochDay(upperBand.getDates()), upperBand.getValues()));
+
+        // lineSeriesBollingerBandsUpperBand.setXDateSeries(upperBand.getDates());
         lineSeriesBollingerBandsUpperBand.setLineWidth(2);
         lineSeriesBollingerBandsUpperBand.setLineStyle(LineStyle.SOLID);
         lineSeriesBollingerBandsUpperBand.setSymbolType(PlotSymbolType.NONE);
-        lineSeriesBollingerBandsUpperBand.setYSeries(upperBand.getValues());
+        // lineSeriesBollingerBandsUpperBand.setYSeries(upperBand.getValues());
         lineSeriesBollingerBandsUpperBand.setAntialias(swtAntialias);
         lineSeriesBollingerBandsUpperBand.setLineColor(colorBollingerBands);
         lineSeriesBollingerBandsUpperBand.setYAxisId(0);
@@ -1631,12 +1645,16 @@ public class SecuritiesChart
         {
             ILineSeries lineSeriesMacd = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE,
                             Messages.LabelChartDetailIndicatorMacd);
-            lineSeriesMacd.setXDateSeries(macdLines.get().getDates());
+
+            lineSeriesMacd.setDataModel(new TimelineSeriesModel(TimelineChart.toEpochDay(macdLines.get().getDates()),
+                            macdLines.get().getValues()));
+
+            // lineSeriesMacd.setXDateSeries(macdLines.get().getDates());
             lineSeriesMacd.setLineStyle(LineStyle.SOLID);
             lineSeriesMacd.setLineWidth(2);
             lineSeriesMacd.enableArea(false);
             lineSeriesMacd.setSymbolType(PlotSymbolType.NONE);
-            lineSeriesMacd.setYSeries(macdLines.get().getValues());
+            // lineSeriesMacd.setYSeries(macdLines.get().getValues());
             lineSeriesMacd.setAntialias(swtAntialias);
             lineSeriesMacd.setLineColor(color);
             lineSeriesMacd.setYAxisId(yAxisId);
@@ -1647,12 +1665,16 @@ public class SecuritiesChart
         {
             ILineSeries lineSeriesSignal = (ILineSeries) chart.getSeriesSet().createSeries(SeriesType.LINE,
                             Messages.LabelChartDetailIndicatorMacdSignal);
-            lineSeriesSignal.setXDateSeries(signalLines.get().getDates());
+
+            lineSeriesSignal.setDataModel(new TimelineSeriesModel(
+                            TimelineChart.toEpochDay(signalLines.get().getDates()), signalLines.get().getValues()));
+
+            // lineSeriesSignal.setXDateSeries(signalLines.get().getDates());
             lineSeriesSignal.setLineStyle(LineStyle.DOT);
             lineSeriesSignal.setLineWidth(2);
             lineSeriesSignal.enableArea(false);
             lineSeriesSignal.setSymbolType(PlotSymbolType.NONE);
-            lineSeriesSignal.setYSeries(signalLines.get().getValues());
+            // lineSeriesSignal.setYSeries(signalLines.get().getValues());
             lineSeriesSignal.setAntialias(swtAntialias);
             lineSeriesSignal.setLineColor(color);
             lineSeriesSignal.setYAxisId(yAxisId);
@@ -1747,7 +1769,7 @@ public class SecuritiesChart
         series.setYAxisId(0);
         series.enableStep(true);
 
-        configureSeriesPainter(series, TimelineChart.toJavaUtilDate(dates.toArray(new LocalDate[0])),
+        configureSeriesPainter(series, dates.toArray(new LocalDate[0]),
                         Doubles.toArray(values), colorFifoPurchasePrice, 2, LineStyle.SOLID, false, seriesCounter == 0);
     }
 
@@ -1840,7 +1862,7 @@ public class SecuritiesChart
         series.setYAxisId(0);
         series.enableStep(true);
 
-        configureSeriesPainter(series, TimelineChart.toJavaUtilDate(dates.toArray(new LocalDate[0])),
+        configureSeriesPainter(series, dates.toArray(new LocalDate[0]),
                         Doubles.toArray(values), colorMovingAveragePurchasePrice, 2, LineStyle.SOLID, false,
                         seriesCounter == 0);
     }

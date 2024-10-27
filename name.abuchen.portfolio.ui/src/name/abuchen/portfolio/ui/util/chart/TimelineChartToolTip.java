@@ -2,10 +2,10 @@ package name.abuchen.portfolio.ui.util.chart;
 
 import java.text.DecimalFormat;
 import java.text.Format;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,6 +36,7 @@ import org.eclipse.swtchart.ISeries;
 
 import name.abuchen.portfolio.money.Values;
 import name.abuchen.portfolio.ui.Messages;
+import name.abuchen.portfolio.ui.util.chart.TimelineChart.TimelineSeriesModel;
 import name.abuchen.portfolio.ui.util.swt.ColoredLabel;
 import name.abuchen.portfolio.util.Pair;
 
@@ -142,47 +143,44 @@ public class TimelineChartToolTip extends AbstractChartToolTip
         return coordinate;
     }
 
-    private Date getFocusDateAt(Event event)
+    private LocalDate getFocusDateAt(Event event)
     {
         IAxis xAxis = getChart().getAxisSet().getXAxes()[0];
 
-        long time = (long) xAxis.getDataCoordinate(event.x);
+        long epochDay = (long) xAxis.getDataCoordinate(event.x);
 
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(time);
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
+        var date = LocalDate.ofEpochDay(epochDay);
 
         if (showToolTipOnlyForDatesInThisDataSeries == null)
-            return cal.getTime();
+            return date;
 
-        ISeries timeSeries = getChart().getSeriesSet().getSeries(showToolTipOnlyForDatesInThisDataSeries);
+        ISeries<?> timeSeries = getChart().getSeriesSet().getSeries(showToolTipOnlyForDatesInThisDataSeries);
         if (timeSeries == null)
-            return cal.getTime();
+            return date;
 
-        int line = Arrays.binarySearch(timeSeries.getXDateSeries(), cal.getTime());
+        var dataModel = (TimelineSeriesModel) timeSeries.getDataModel();
+        var xData = dataModel.getXData();
+
+        int line = Arrays.binarySearch(xData, epochDay);
 
         if (line >= 0)
-            return cal.getTime();
+            return date;
 
         // otherwise: find closest existing date
         line = -line - 1;
 
         if (line == 0)
-            return timeSeries.getXDateSeries()[line];
+            return LocalDate.ofEpochDay((long) xData[line]);
 
-        int length = timeSeries.getXDateSeries().length;
+        int length = xData.length;
         if (line >= length)
-            return timeSeries.getXDateSeries()[length - 1];
+            return LocalDate.ofEpochDay((long) xData[length - 1]);
 
         // check which date is closer to the targeted date
-        long target = cal.getTimeInMillis();
-        Date left = timeSeries.getXDateSeries()[line - 1];
-        Date right = timeSeries.getXDateSeries()[line];
+        var left = (long) xData[line - 1];
+        var right = (long) xData[line];
 
-        return target - left.getTime() < right.getTime() - target ? left : right;
+        return epochDay - left < right - epochDay ? LocalDate.ofEpochDay(left) : LocalDate.ofEpochDay(right);
     }
 
     @Override
@@ -248,6 +246,8 @@ public class TimelineChartToolTip extends AbstractChartToolTip
     {
         List<Pair<ISeries, Double>> values = new ArrayList<>();
 
+        var focusedObject = getFocusedObject();
+
         for (ISeries series : allSeries) // NOSONAR
         {
             if (excludeFromTooltip.contains(series.getId()))
@@ -265,15 +265,16 @@ public class TimelineChartToolTip extends AbstractChartToolTip
             }
             else
             {
-                var dateSeries = series.getXDateSeries();
-                int line = Arrays.binarySearch(dateSeries, getFocusedObject());
+                var dataModel = (TimelineSeriesModel)series.getDataModel(); 
+                var xData = dataModel.getXData();
                 
+                int line = Arrays.binarySearch(xData, ((LocalDate) focusedObject).toEpochDay());
                 if (line >= 0)
                 {
                     // user hit the pixel, show value
                     value = series.getYSeries()[line];
                 }
-                else if (line == -1 || line == -dateSeries.length - 1)
+                else if (line == -1 || line == -xData.length - 1)
                 {
                     // pixel is before or after data series, show nothing
                     continue;
@@ -296,8 +297,8 @@ public class TimelineChartToolTip extends AbstractChartToolTip
             return xAxisFormat.apply(obj);
         else if (categoryEnabled && obj instanceof Integer integer)
             return getChart().getAxisSet().getXAxis(0).getCategorySeries()[integer];
-        else if (obj instanceof Date date)
-            return Values.Date.format(date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+        else if (obj instanceof LocalDate date)
+            return Values.Date.format(date);
         else
             return String.valueOf(obj);
     }
