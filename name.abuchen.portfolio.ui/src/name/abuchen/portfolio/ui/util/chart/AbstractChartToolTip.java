@@ -102,6 +102,9 @@ public abstract class AbstractChartToolTip implements Listener
         {
             tip.dispose();
             tip = null;
+
+            if (chart instanceof TimelineChart timelineChart)
+                timelineChart.disableBuffering();
         }
     }
 
@@ -121,6 +124,9 @@ public abstract class AbstractChartToolTip implements Listener
 
         if (tip != null && !tip.isDisposed())
             tip.dispose();
+
+        if (chart instanceof TimelineChart timelineChart)
+            timelineChart.enableBuffering();
 
         tip = new Shell(Display.getDefault().getActiveShell(), SWT.ON_TOP | SWT.TOOL);
         tip.setLayout(new FillLayout());

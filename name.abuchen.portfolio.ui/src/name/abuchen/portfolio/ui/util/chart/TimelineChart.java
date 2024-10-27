@@ -18,8 +18,10 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swtchart.Chart;
 import org.eclipse.swtchart.IAxis;
 import org.eclipse.swtchart.IAxis.Position;
@@ -27,7 +29,10 @@ import org.eclipse.swtchart.IBarSeries;
 import org.eclipse.swtchart.ICustomPaintListener;
 import org.eclipse.swtchart.ILineSeries;
 import org.eclipse.swtchart.ILineSeries.PlotSymbolType;
+import org.eclipse.swtchart.IPlotArea;
+import org.eclipse.swtchart.ISeries;
 import org.eclipse.swtchart.ISeries.SeriesType;
+import org.eclipse.swtchart.ISeriesSet;
 import org.eclipse.swtchart.LineStyle;
 import org.eclipse.swtchart.Range;
 import org.eclipse.swtchart.model.DoubleArraySeriesModel;
@@ -148,6 +153,8 @@ public class TimelineChart extends Chart // NOSONAR
         getPlotArea().getControl().addTraverseListener(event -> event.doit = true);
 
         this.contextMenu = new ChartContextMenu(this);
+
+        this.addDisposeListener(event -> disableBuffering());
     }
 
     public void addMarkerLine(LocalDate date, Color color, String label)
@@ -198,6 +205,87 @@ public class TimelineChart extends Chart // NOSONAR
                 return false;
             }
         });
+    }
+
+    public void enableBuffering()
+    {
+        if (!getPlotArea().isBuffered())
+        {
+            var plotArea = getPlotArea();
+
+            suspendUpdate(true);
+            Image image = new Image(Display.getDefault(), plotArea.getImageData());
+            ISeriesSet set = getSeriesSet();
+            ISeries<?>[] series = set.getSeries();
+            for (ISeries<?> serie : series)
+            {
+                serie.setVisibleBuffered(serie.isVisible());
+                hideSeries(serie.getId());
+            }
+            /*
+             * The image will be disposed when releasing the selection and
+             * setting the background image to null.
+             */
+            plotArea.setBackgroundImage(image);
+            plotArea.getControl().setData(IPlotArea.KEY_BUFFERED_BACKGROUND_IMAGE, image);
+            plotArea.setBuffered(true);
+
+            suspendUpdate(false);
+            redraw();
+        }
+    }
+
+    public void hideSeries(String selectedSeriesId)
+    {
+
+        ISeries<?> dataSeries = getSeriesSet().getSeries(selectedSeriesId);
+        if (dataSeries != null)
+        {
+            dataSeries.setVisible(false);
+            dataSeries.setVisibleInLegend(false);
+        }
+    }
+
+    public void showSeries(String selectedSeriesId)
+    {
+
+        ISeries<?> dataSeries = getSeriesSet().getSeries(selectedSeriesId);
+        if (dataSeries != null)
+        {
+            dataSeries.setVisible(true);
+            dataSeries.setVisibleInLegend(true);
+        }
+    }
+
+    public void disableBuffering()
+    {
+        if (getPlotArea().isBuffered())
+        {
+            var plotArea = getPlotArea();
+
+            suspendUpdate(true);
+            plotArea.setBackgroundImage(null);
+            Object object = plotArea.getControl().getData(IPlotArea.KEY_BUFFERED_BACKGROUND_IMAGE);
+            if (object instanceof Image image)
+            {
+                plotArea.getControl().setData(IPlotArea.KEY_BUFFERED_BACKGROUND_IMAGE, null);
+                image.dispose();
+            }
+            plotArea.setBuffered(false);
+            ISeriesSet set = getSeriesSet();
+            ISeries<?>[] series = set.getSeries();
+            for (ISeries<?> serie : series)
+            {
+                if (serie.isVisibleBuffered())
+                {
+                    showSeries(serie.getId());
+                    serie.setVisibleBuffered(false);
+                }
+            }
+            suspendUpdate(false);
+            redraw();
+
+        }
     }
 
     public ILineSeries addDateSeries(String id, LocalDate[] dates, double[] values, String label)
