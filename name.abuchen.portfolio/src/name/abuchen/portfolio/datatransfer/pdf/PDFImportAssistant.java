@@ -220,9 +220,11 @@ public class PDFImportAssistant
                             PortfolioLog.info("PDF successfully imported with PDFBox 1.8.x " + inputFile.getName()); //$NON-NLS-1$
                         }
                     }
-                    catch (IOException ignore)
+                    catch (IOException | LinkageError ignore)
                     {
                         // ignore if the file cannot be read by PDFBox Version 1
+                        // or if the legacy PDFBox 1.x classes are not available
+                        // (e.g. when running on a plain classpath without OSGi)
                         PortfolioLog.error(ignore);
                     }
                 }
