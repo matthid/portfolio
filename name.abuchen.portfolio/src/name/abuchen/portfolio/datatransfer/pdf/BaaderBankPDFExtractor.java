@@ -39,6 +39,7 @@ public class BaaderBankPDFExtractor extends AbstractPDFExtractor
         addFeesAssetManagerTransaction();
         addInterestTransaction();
         addDeliveryInOutBoundTransaction();
+        addDepotDeliveryTransaction();
         addNonImportableTransaction();
     }
 
@@ -430,7 +431,8 @@ public class BaaderBankPDFExtractor extends AbstractPDFExtractor
                         "(Kontoauszug" //
                         + "|Account Statement" //
                         + "|Transaction Statement" //
-                        + "|Steuerausgleichsrechnung)");
+                        + "|Steuerausgleichsrechnung" //
+                        + "|Depoteinlieferung)");
         this.addDocumentTyp(type);
 
         var pdfTransaction = new Transaction<AccountTransaction>();
@@ -873,8 +875,9 @@ public class BaaderBankPDFExtractor extends AbstractPDFExtractor
         // 12.04.2018 Lastschrift aktiv 12.04.2018 10.000,00
         // 11.12.2020 Gutschrift 11.12.2020 20,00
         // 09.01.2025 Ueberweisung 09.01.2025 100,00
+        // 08.05.2026 SEPA-IP-Überweisung 08.05.2026 10.000,00
         // @formatter:on
-        var depositBlock = new Block("^[\\d]{2}\\.[\\d]{2}\\.[\\d]{4} (Lastschrift aktiv|Gutschrift|Ueberweisung) [\\d]{2}\\.[\\d]{2}\\.[\\d]{4} [\\.,\\d]+$");
+        var depositBlock = new Block("^[\\d]{2}\\.[\\d]{2}\\.[\\d]{4} (Lastschrift aktiv|Gutschrift|Ueberweisung|SEPA\\-IP\\-.berweisung) [\\d]{2}\\.[\\d]{2}\\.[\\d]{4} [\\.,\\d]+$");
         type.addBlock(depositBlock);
         depositBlock.set(new Transaction<AccountTransaction>()
 
@@ -882,7 +885,7 @@ public class BaaderBankPDFExtractor extends AbstractPDFExtractor
 
                         .section("note", "date", "amount") //
                         .documentContext("currency") //
-                        .match("^[\\d]{2}\\.[\\d]{2}\\.[\\d]{4} (?<note>(Lastschrift aktiv|Gutschrift|Ueberweisung)) (?<date>[\\d]{2}\\.[\\d]{2}\\.[\\d]{4}) (?<amount>[\\.,\\d]+)$") //
+                        .match("^[\\d]{2}\\.[\\d]{2}\\.[\\d]{4} (?<note>(Lastschrift aktiv|Gutschrift|Ueberweisung|SEPA\\-IP\\-.berweisung)) (?<date>[\\d]{2}\\.[\\d]{2}\\.[\\d]{4}) (?<amount>[\\.,\\d]+)$") //
                         .assign((t, v) -> {
                             t.setDateTime(asDate(v.get("date")));
                             t.setCurrencyCode(v.get("currency"));
@@ -933,6 +936,71 @@ public class BaaderBankPDFExtractor extends AbstractPDFExtractor
                             t.setCurrencyCode(v.get("currency"));
                             t.setAmount(asAmount(v.get("amount")));
                             t.setNote(v.get("note"));
+                        })
+
+                        .wrap(TransactionItem::new));
+
+        // @formatter:off
+        // 06.05.2026 Coupons/Dividende 05.05.2026 0,85
+        // PNC FINL SERVICES GRP DL5
+        // ISIN US6934751057
+        // STK               1
+        // 64811517
+        // Vorgangs-Nr.: WWEK 61605593
+        // @formatter:on
+        var dividendBlock = new Block("^[\\d]{2}\\.[\\d]{2}\\.[\\d]{4} Coupons\\/Dividende [\\d]{2}\\.[\\d]{2}\\.[\\d]{4} [\\.,\\d]+$");
+        type.addBlock(dividendBlock);
+        dividendBlock.set(new Transaction<AccountTransaction>()
+
+                        .subject(() -> new AccountTransaction(AccountTransaction.Type.DIVIDENDS))
+
+                        .section("date", "amount", "name", "isin", "shares", "note") //
+                        .documentContext("currency") //
+                        .match("^(?<date>[\\d]{2}\\.[\\d]{2}\\.[\\d]{4}) Coupons\\/Dividende [\\d]{2}\\.[\\d]{2}\\.[\\d]{4} (?<amount>[\\.,\\d]+)$") //
+                        .match("^(?<name>.*)$") //
+                        .match("^(ISIN[\\s]+)?(?<isin>[A-Z]{2}[A-Z0-9]{9}[0-9])$") //
+                        .match("^STK[\\s]+(?<shares>[\\.,\\d]+)$") //
+                        .match("^Vorgangs\\-Nr\\.: (?<note>.*)$") //
+                        .assign((t, v) -> {
+                            t.setDateTime(asDate(v.get("date")));
+                            t.setSecurity(getOrCreateSecurity(v));
+                            t.setCurrencyCode(v.get("currency"));
+                            t.setAmount(asAmount(v.get("amount")));
+                            t.setShares(asShares(v.get("shares")));
+                            t.setNote(v.get("note"));
+                        })
+
+                        .wrap(TransactionItem::new));
+
+        // @formatter:off
+        // 10.07.2026 Storno Coupons/Dividende 30.06.2026 0,03 -
+        // BROOKFIELD CORP. CL.A
+        // ISIN CA11271J1075
+        // STK               1
+        // 66760206
+        // Vorgangs-Nr.: WWEK 63471940
+        // @formatter:on
+        var dividendStornoBlock = new Block("^[\\d]{2}\\.[\\d]{2}\\.[\\d]{4} Storno Coupons\\/Dividende [\\d]{2}\\.[\\d]{2}\\.[\\d]{4} [\\.,\\d]+ \\-$");
+        type.addBlock(dividendStornoBlock);
+        dividendStornoBlock.set(new Transaction<AccountTransaction>()
+
+                        .subject(() -> new AccountTransaction(AccountTransaction.Type.DIVIDENDS))
+
+                        .section("date", "amount", "name", "isin", "shares") //
+                        .documentContext("currency") //
+                        .match("^(?<date>[\\d]{2}\\.[\\d]{2}\\.[\\d]{4}) Storno Coupons\\/Dividende [\\d]{2}\\.[\\d]{2}\\.[\\d]{4} (?<amount>[\\.,\\d]+) \\-$") //
+                        .match("^(?<name>.*)$") //
+                        .match("^ISIN (?<isin>[A-Z]{2}[A-Z0-9]{9}[0-9])$") //
+                        .match("^STK[\\s]+(?<shares>[\\.,\\d]+)$") //
+                        .assign((t, v) -> {
+                            v.markAsFailure(Messages.MsgErrorTransactionOrderCancellationUnsupported);
+
+                            t.setDateTime(asDate(v.get("date")));
+                            t.setSecurity(getOrCreateSecurity(v));
+                            t.setCurrencyCode(v.get("currency"));
+                            t.setAmount(asAmount(v.get("amount")));
+                            t.setShares(asShares(v.get("shares")));
+                            t.setNote("Storno Coupons/Dividende"); //$NON-NLS-1$
                         })
 
                         .wrap(TransactionItem::new));
@@ -1295,13 +1363,11 @@ public class BaaderBankPDFExtractor extends AbstractPDFExtractor
     private void addNonImportableTransaction()
     {
         final var type = new DocumentType("(Fusion \\/ Zusammenlegung" //
-                        + "|Depoteinlieferung" //
                         + "|Reverse Split" //
                         + "|Obligatorischer Umtausch)", //
                         documentContext -> documentContext //
                                         .section("transaction") //
                                         .match("^(?<transaction>(Fusion \\/ Zusammenlegung" //
-                                                        + "|Depoteinlieferung" //
                                                         + "|Reverse Split" //
                                                         + "|Obligatorischer Umtausch))$") //
                                         .assign((ctx, v) -> ctx.put("transaction", v.get("transaction"))));
@@ -1371,6 +1437,47 @@ public class BaaderBankPDFExtractor extends AbstractPDFExtractor
                                                             t.setCurrencyCode(asCurrencyCode(t.getSecurity().getCurrencyCode()));
                                                             t.setAmount(0L);
                                                         }))
+
+                        .wrap(TransactionItem::new);
+    }
+
+    private void addDepotDeliveryTransaction()
+    {
+        final var type = new DocumentType("Depoteinlieferung");
+        this.addDocumentTyp(type);
+
+        var pdfTransaction = new Transaction<PortfolioTransaction>();
+
+        var firstRelevantLine = new Block("^Nominale ISIN: [A-Z]{2}[A-Z0-9]{9}[0-9] WKN: [A-Z0-9]{6}$");
+        type.addBlock(firstRelevantLine);
+        firstRelevantLine.set(pdfTransaction);
+
+        pdfTransaction //
+
+                        .subject(() -> new PortfolioTransaction(PortfolioTransaction.Type.DELIVERY_INBOUND))
+
+                        // @formatter:off
+                        // Depoteinlieferung
+                        // Nominale ISIN: CA0084741085 WKN: 860325
+                        // STK 12 Agnico Eagle Mines Ltd.
+                        // Registered Shares o.N.
+                        // Verwahrart: Wertpapierrechnung Handelstag: 18.03.2026
+                        // Lagerstelle: 2379 Valuta: 20.03.2026
+                        // Lagerland: Kanada
+                        // @formatter:on
+                        .section("isin", "wkn", "shares", "name", "nameContinued", "date") //
+                        .match("^Nominale ISIN: (?<isin>[A-Z]{2}[A-Z0-9]{9}[0-9]) WKN: (?<wkn>[A-Z0-9]{6})$") //
+                        .match("^STK (?<shares>[\\.,\\d]+) (?<name>.*)$") //
+                        .match("^(?<nameContinued>.*)$") //
+                        .match("^.*Valuta: (?<date>[\\d]{2}\\.[\\d]{2}\\.[\\d]{4}).*$") //
+                        .assign((t, v) -> {
+                            t.setDateTime(asDate(v.get("date")));
+                            t.setShares(asShares(v.get("shares")));
+                            t.setSecurity(getOrCreateSecurity(v));
+
+                            t.setCurrencyCode(asCurrencyCode(t.getSecurity().getCurrencyCode()));
+                            t.setAmount(0L);
+                        })
 
                         .wrap(TransactionItem::new);
     }
@@ -1541,7 +1648,25 @@ public class BaaderBankPDFExtractor extends AbstractPDFExtractor
                         // @formatter:on
                         .section("currency", "fee").optional() //
                         .match("^Stamp HongKong (?<currency>[A-Z]{3}) (?<fee>[\\.,\\d]+)( \\-)?$") //
-                        .assign((t, v) -> processFeeEntries(t, v, type));
+                        .assign((t, v) -> processFeeEntries(t, v, type))
+
+                        // @formatter:off
+                        // Finanzkommission Baader EUR 0,50
+                        // Vermittlungsentgelt Tradersplace EUR 2,65
+                        // @formatter:on
+                        .section("currency", "fee").multipleTimes().optional() //
+                        .match("^(Finanzkommission|Vermittlungsentgelt) .* (?<currency>[A-Z]{3}) (?<fee>[\\.,\\d]+)$") //
+                        .assign((t, v) -> processFeeEntries(t, v, type))
+
+                        // @formatter:off
+                        // Handelsplatzabhängige Gutschrift Baader EUR 3,15 -
+                        // @formatter:on
+                        .section("currency", "fee").optional() //
+                        .match("^Handelsplatzabh.ngige Gutschrift .* (?<currency>[A-Z]{3}) (?<fee>[\\.,\\d]+) \\-$") //
+                        .assign((t, v) -> {
+                            var fee = Money.of(asCurrencyCode(v.get("currency")), -asAmount(v.get("fee"))); //$NON-NLS-1$
+                            ExtractorUtils.checkAndSetFee(fee, t, type.getCurrentContext());
+                        });
     }
 
     @Override
