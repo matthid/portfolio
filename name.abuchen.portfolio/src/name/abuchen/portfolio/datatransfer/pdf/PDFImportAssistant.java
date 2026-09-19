@@ -126,6 +126,7 @@ public class PDFImportAssistant
         extractors.add(new RaisinBankAGPDFExtractor(client));
         extractors.add(new RenaultBankDirektPDFExtractor(client));
         extractors.add(new RevolutLtdPDFExtractor(client));
+        extractors.add(new RevolutDigitalAssetsPDFExtractor(client));
         extractors.add(new SantanderConsumerBankPDFExtractor(client));
         extractors.add(new SaxoBankPDFExtractor(client));
         extractors.add(new SberbankEuropeAGPDFExtractor(client));

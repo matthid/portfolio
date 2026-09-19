@@ -1,0 +1,70 @@
+Individueller Auszug
+01.02.2026 - 19.09.2026
+Erstellt am 19.09.2026
+MAX MUSTERMANN
+Musterstr. 17A Steuerwohnsitz: Germany
+12345 Steuer-ID: 12345678901
+Musterstadt Geburtsdatum: 01.01.1990
+Bayern
+Crypto Summaries
+Capital gains from Sale
+Gross sales value €245.38 Tax withheld on sales €0.00
+$286.61 $0.00
+Cost of purchase €211.41 Tax withheld on purchase €0.00
+$241.60 $0.00
+Fees and other charges €0.24 Net capital gains income €33.97
+$0.28 $45.01
+Crypto account details
+Account name MAX MUSTERMANN Opening date 22.11.22
+Holding modalities Individual Closing date
+Purpose of account Personal Days owned (in selected period) 231
+Nature of account Portfolio
+End of Year holding statement
+Description and symbol Units held Unit price Value held
+BTC 0.0285475 €70,682.20 €2,017.80
+$81,328.44 $2,321.73
+ETH 0.66040765 €2,294.83 €1,515.52
+$2,640.48 $1,743.79
+Total €3,533.32
+$4,065.52
+Deposit value
+Average balance Q2 2026 €6,159.97 Opening balance €6,408.47
+$7,151.90 $7,519.66
+Closing balance €9,903.34
+$11,357.30
+Financial institution information
+Financial institution name Revolut Digital Assets Europe Ltd Registration number HE430310
+Address and country Pikoni 10 Fiat/Office 5, 3075,
+LIMASSOL, Cyprus
+Individueller Auszug
+01.02.2026 - 19.09.2026
+Erstellt am 19.09.2026
+Crypto Transaction Statements
+Transaction statement (only sales)
+Date
+of Sale Description and symbol Age of units Units sold Unit price Value
+on Sale date of Sale Capital gains Fees
+of Purchase on Purchase date of Purchase
+21.08.26 BTC 1 year 11 0.00123456 + €54,000.05 + €66.67 -€60.00 €0.24
+01.09.24 months 20 - €62,000.10 - €60.50 -$66.90 $0.28
+days + $76.90 + $76.90
+- $69.15 - $30.00
+22.08.26 ETH 3 months 5 0.5 + €3,000.00 + €1,500.00 €1,300.00 €0.00
+$3,500.00 $1,700.00 $1,450.00 $0.00
+Total + €1,566.67 €1,306.43 €0.24
+- €1,160.00 $1,532.42 $0.28
+Transaction statement (only acquisitions)
+Purchase date Description and symbol Units purchased Unit price Purchase value Fees
+05.02.26 BTC 0.00222222 €54,000.05 €120.00 €0.00
+$63,675.37 $141.50 $0.00
+23.02.26 ETH 0.06329113 €1,580.00 €100.00 €0.00
+$1,872.54 $118.51 $0.00
+24.02.26 BTC 0.00187357 €53,374.04 €100.00 €0.00
+$62,898.71 $117.85 $0.00
+27.05.26 XRP 171.719136 €1.16 €200.00 €2.98
+$1.36 $233.12 $3.47
+Total €520.00 €2.98
+$611.98 $3.47
+Information about Crypto statement
+Cryptocurrency services are not regulated. This product is offered by Revolut Digital Assets Europe Ltd. Registered address: Pikioni, 10 Flat
+/Office 5, 3075, Limassol, Cyprus. Revolut Digital Assets Europe Ltd is registered with CySEC as a cryptoassets service provider.
