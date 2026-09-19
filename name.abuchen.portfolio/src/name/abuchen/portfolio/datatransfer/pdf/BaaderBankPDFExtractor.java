@@ -1006,6 +1006,83 @@ public class BaaderBankPDFExtractor extends AbstractPDFExtractor
                         .wrap(TransactionItem::new));
 
         // @formatter:off
+        // 07.05.2026 Kauf 11.05.2026 9.954,00 -
+        // VANG.FTSE A.W. DLA
+        // ISIN IE00BK5BQT80
+        // STK              63
+        // Vorgangs-Nr.: WWUM 00659846264
+        //
+        // 11.05.2017 Kauf 12.05.2017 449,95 -
+        // UBS-ETF-MSCI EMERG.MKTS A
+        // ISIN LU0480132876
+        // STK               5
+        // @formatter:on
+        var securitiesBuyBlock = new Block("^[\\d]{2}\\.[\\d]{2}\\.[\\d]{4} Kauf [\\d]{2}\\.[\\d]{2}\\.[\\d]{4} [\\.,\\d]+ \\-$");
+        type.addBlock(securitiesBuyBlock);
+        securitiesBuyBlock.set(new Transaction<BuySellEntry>()
+
+                        .subject(() -> new BuySellEntry(PortfolioTransaction.Type.BUY))
+
+                        .section("date", "amount", "name", "isin", "shares") //
+                        .documentContext("currency") //
+                        .match("^(?<date>[\\d]{2}\\.[\\d]{2}\\.[\\d]{4}) Kauf [\\d]{2}\\.[\\d]{2}\\.[\\d]{4} (?<amount>[\\.,\\d]+) \\-$") //
+                        .match("^(?<name>.*)$") //
+                        .match("^(ISIN[\\s]+)?(?<isin>[A-Z]{2}[A-Z0-9]{9}[0-9])$") //
+                        .match("^STK[\\s]+(?<shares>[\\.,\\d]+)([\\s]+\\-)?$") //
+                        .assign((t, v) -> {
+                            t.setDate(asDate(v.get("date")));
+                            t.setSecurity(getOrCreateSecurity(v));
+                            t.setCurrencyCode(v.get("currency"));
+                            t.setAmount(asAmount(v.get("amount")));
+                            t.setShares(asShares(v.get("shares")));
+                        })
+
+                        // @formatter:off
+                        // Vorgangs-Nr.: WWUM 00659846264
+                        // @formatter:on
+                        .section("note").optional() //
+                        .match("^Vorgangs\\-Nr\\.: (?<note>.*)$") //
+                        .assign((t, v) -> t.setNote(v.get("note")))
+
+                        .wrap(BuySellEntryItem::new));
+
+        // @formatter:off
+        // 25.07.2018 Verkauf 27.07.2018 488,72
+        // ISHSIII-C.EO GOV. B.EODIS
+        // ISIN IE00B4WXJJ64
+        // STK               4    -
+        // Vorgangs-Nr.: WWUM 06385548
+        // @formatter:on
+        var securitiesSellBlock = new Block("^[\\d]{2}\\.[\\d]{2}\\.[\\d]{4} Verkauf [\\d]{2}\\.[\\d]{2}\\.[\\d]{4} [\\.,\\d]+$");
+        type.addBlock(securitiesSellBlock);
+        securitiesSellBlock.set(new Transaction<BuySellEntry>()
+
+                        .subject(() -> new BuySellEntry(PortfolioTransaction.Type.SELL))
+
+                        .section("date", "amount", "name", "isin", "shares") //
+                        .documentContext("currency") //
+                        .match("^(?<date>[\\d]{2}\\.[\\d]{2}\\.[\\d]{4}) Verkauf [\\d]{2}\\.[\\d]{2}\\.[\\d]{4} (?<amount>[\\.,\\d]+)$") //
+                        .match("^(?<name>.*)$") //
+                        .match("^(ISIN[\\s]+)?(?<isin>[A-Z]{2}[A-Z0-9]{9}[0-9])$") //
+                        .match("^STK[\\s]+(?<shares>[\\.,\\d]+)([\\s]+\\-)?$") //
+                        .assign((t, v) -> {
+                            t.setDate(asDate(v.get("date")));
+                            t.setSecurity(getOrCreateSecurity(v));
+                            t.setCurrencyCode(v.get("currency"));
+                            t.setAmount(asAmount(v.get("amount")));
+                            t.setShares(asShares(v.get("shares")));
+                        })
+
+                        // @formatter:off
+                        // Vorgangs-Nr.: WWUM 06385548
+                        // @formatter:on
+                        .section("note").optional() //
+                        .match("^Vorgangs\\-Nr\\.: (?<note>.*)$") //
+                        .assign((t, v) -> t.setNote(v.get("note")))
+
+                        .wrap(BuySellEntryItem::new));
+
+        // @formatter:off
         // 06.07.2018 Transaktionskostenpauschale o. MwSt. 10.07.2018 2,56 -
         // 15.07.2024 Ordergebühr 15.07.2024 0,99 -
         // @formatter:on

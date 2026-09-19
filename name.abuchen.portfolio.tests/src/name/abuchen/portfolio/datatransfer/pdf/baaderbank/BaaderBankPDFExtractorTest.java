@@ -5228,14 +5228,32 @@ public class BaaderBankPDFExtractorTest
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug01.txt"), errors);
 
         assertThat(errors, empty());
-        assertThat(countSecurities(results), is(0L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(2L));
+        assertThat(countBuySell(results), is(2L));
         assertThat(countAccountTransactions(results), is(1L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(0L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(1));
+        assertThat(results.size(), is(5));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("IE00B5BMR087")), //
+                        hasDate("2018-04-13"), hasShares(2.00), //
+                        hasSource("Periodenauszug01.txt"), //
+                        hasNote("WWUM 05319192"), //
+                        hasAmount("EUR", 418.00), hasGrossValue("EUR", 418.00), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("IE00B52MJY50")), //
+                        hasDate("2018-04-13"), hasShares(2.00), //
+                        hasSource("Periodenauszug01.txt"), //
+                        hasNote(null), //
+                        hasAmount("EUR", 238.20), hasGrossValue("EUR", 238.20), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // check transaction
         var iter = results.stream().filter(TransactionItem.class::isInstance).iterator();
@@ -5262,14 +5280,41 @@ public class BaaderBankPDFExtractorTest
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug02.txt"), errors);
 
         assertThat(errors, empty());
-        assertThat(countSecurities(results), is(2L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(4L));
+        assertThat(countBuySell(results), is(4L));
         assertThat(countAccountTransactions(results), is(5L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(0L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(7));
+        assertThat(results.size(), is(13));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("IE00B1FZS798")), //
+                        hasDate("2018-07-25"), hasShares(4.00), //
+                        hasSource("Periodenauszug02.txt"), //
+                        hasNote("WWUM 06367329"), //
+                        hasAmount("EUR", 642.40), hasGrossValue("EUR", 642.40), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check sell transaction
+        assertThat(results, hasItem(sale( //
+                        hasSecurity(hasIsin("IE00B4WXJJ64")), //
+                        hasDate("2018-07-25"), hasShares(4.00), //
+                        hasSource("Periodenauszug02.txt"), //
+                        hasNote("WWUM 06385548"), //
+                        hasAmount("EUR", 488.72), hasGrossValue("EUR", 488.72), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check sell transaction
+        assertThat(results, hasItem(sale( //
+                        hasSecurity(hasIsin("IE00B3F81R35")), //
+                        hasDate("2018-07-25"), hasShares(4.00), //
+                        hasSource("Periodenauszug02.txt"), //
+                        hasNote("WWUM 06392404"), //
+                        hasAmount("EUR", 515.61), hasGrossValue("EUR", 515.61), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // check securities
         assertThat(results, hasItem(security( //
@@ -5322,14 +5367,50 @@ public class BaaderBankPDFExtractorTest
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug03.txt"), errors);
 
         assertThat(errors, empty());
-        assertThat(countSecurities(results), is(2L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(12L));
+        assertThat(countBuySell(results), is(12L));
         assertThat(countAccountTransactions(results), is(3L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(0L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(5));
+        assertThat(results.size(), is(27));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("DE0005933931")), //
+                        hasDate("2017-05-10"), hasShares(4.00), //
+                        hasSource("Periodenauszug03.txt"), //
+                        hasNote("WWUM 12345678"), //
+                        hasAmount("EUR", 444.04), hasGrossValue("EUR", 444.04), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("LU0480132876")), //
+                        hasDate("2017-05-11"), hasShares(5.00), //
+                        hasSource("Periodenauszug03.txt"), //
+                        hasNote("WWUM 12345678"), //
+                        hasAmount("EUR", 449.95), hasGrossValue("EUR", 449.95), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check sell transaction
+        assertThat(results, hasItem(sale( //
+                        hasSecurity(hasIsin("DE000A1C22M3")), //
+                        hasDate("2017-05-11"), hasShares(18.00), //
+                        hasSource("Periodenauszug03.txt"), //
+                        hasNote("WWUM 12345678"), //
+                        hasAmount("EUR", 397.76), hasGrossValue("EUR", 397.76), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check sell transaction
+        assertThat(results, hasItem(sale( //
+                        hasSecurity(hasIsin("FR0010270033")), //
+                        hasDate("2017-05-12"), hasShares(7.00), //
+                        hasSource("Periodenauszug03.txt"), //
+                        hasNote("WWUM 12345678"), //
+                        hasAmount("EUR", 105.31), hasGrossValue("EUR", 105.31), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // check securities
         assertThat(results, hasItem(security( //
@@ -5525,14 +5606,41 @@ public class BaaderBankPDFExtractorTest
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug08.txt"), errors);
 
         assertThat(errors, empty());
-        assertThat(countSecurities(results), is(2L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(16L));
+        assertThat(countBuySell(results), is(15L));
         assertThat(countAccountTransactions(results), is(3L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(0L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(5));
+        assertThat(results.size(), is(34));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("US6541061031")), //
+                        hasDate("2023-10-02"), hasShares(0.167), //
+                        hasSource("Periodenauszug08.txt"), //
+                        hasNote("WWUM 00230752699"), //
+                        hasAmount("EUR", 15.28), hasGrossValue("EUR", 15.28), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("IE00BK5BQT80")), //
+                        hasDate("2023-10-02"), hasShares(1.076), //
+                        hasSource("Periodenauszug08.txt"), //
+                        hasNote("WWUM 00231061429"), //
+                        hasAmount("EUR", 108.89), hasGrossValue("EUR", 108.89), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("GB0002875804")), //
+                        hasDate("2023-10-02"), hasShares(0.674), //
+                        hasSource("Periodenauszug08.txt"), //
+                        hasNote("WWUM 00231389908"), //
+                        hasAmount("EUR", 20.13), hasGrossValue("EUR", 20.13), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // check securities
         assertThat(results, hasItem(security( //
@@ -5575,14 +5683,32 @@ public class BaaderBankPDFExtractorTest
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug09.txt"), errors);
 
         assertThat(errors, empty());
-        assertThat(countSecurities(results), is(0L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(7L));
+        assertThat(countBuySell(results), is(7L));
         assertThat(countAccountTransactions(results), is(7L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(0L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(7));
+        assertThat(results.size(), is(21));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("LU1563454310")), //
+                        hasDate("2020-11-03"), hasShares(1.796), //
+                        hasSource("Periodenauszug09.txt"), //
+                        hasNote("WWUM 24311635"), //
+                        hasAmount("EUR", 99.96), hasGrossValue("EUR", 99.96), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("IE00BFNM3L97")), //
+                        hasDate("2020-11-03"), hasShares(5.351), //
+                        hasSource("Periodenauszug09.txt"), //
+                        hasNote("WWUM 24318948"), //
+                        hasAmount("EUR", 25.00), hasGrossValue("EUR", 25.00), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // assert transaction
         assertThat(results, hasItem(deposit(hasDate("2020-11-02"), hasAmount("EUR", 25.00), //
@@ -5623,14 +5749,32 @@ public class BaaderBankPDFExtractorTest
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug10.txt"), errors);
 
         assertThat(errors, empty());
-        assertThat(countSecurities(results), is(1L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(3L));
+        assertThat(countBuySell(results), is(2L));
         assertThat(countAccountTransactions(results), is(1L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(0L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(2));
+        assertThat(results.size(), is(6));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("LU0290358497")), //
+                        hasDate("2024-05-03"), hasShares(64.00), //
+                        hasSource("Periodenauszug10.txt"), //
+                        hasNote("WWUM 76365489249"), //
+                        hasAmount("EUR", 1055.55), hasGrossValue("EUR", 1055.55), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("IE00B5BMR087")), //
+                        hasDate("2024-05-07"), hasShares(0.098), //
+                        hasSource("Periodenauszug10.txt"), //
+                        hasNote("WWUM 41305394494"), //
+                        hasAmount("EUR", 49.63), hasGrossValue("EUR", 49.63), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // check security
         assertThat(results, hasItem(security( //
@@ -5658,14 +5802,23 @@ public class BaaderBankPDFExtractorTest
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug11.txt"), errors);
 
         assertThat(errors, empty());
-        assertThat(countSecurities(results), is(0L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(1L));
+        assertThat(countBuySell(results), is(1L));
         assertThat(countAccountTransactions(results), is(2L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(0L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(2));
+        assertThat(results.size(), is(4));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("IE00B60SX394")), //
+                        hasDate("2024-07-11"), hasShares(275.00), //
+                        hasSource("Periodenauszug11.txt"), //
+                        hasNote("WWUM 00338565957"), //
+                        hasAmount("EUR", 28323.63), hasGrossValue("EUR", 28323.63), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // assert transaction
         assertThat(results, hasItem(deposit(hasDate("2024-07-05"), hasAmount("EUR", 28240.00), //
@@ -5725,14 +5878,32 @@ public class BaaderBankPDFExtractorTest
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug13.txt"), errors);
 
         assertThat(errors, empty());
-        assertThat(countSecurities(results), is(0L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(2L));
+        assertThat(countBuySell(results), is(2L));
         assertThat(countAccountTransactions(results), is(5L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(1L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(5));
+        assertThat(results.size(), is(9));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("US8361001071")), //
+                        hasDate("2024-12-23"), hasShares(10.00), //
+                        hasSource("Periodenauszug13.txt"), //
+                        hasNote("SyGc 456456456"), //
+                        hasAmount("EUR", 202.93), hasGrossValue("EUR", 202.93), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("US00217D1000")), //
+                        hasDate("2024-12-27"), hasShares(11.00), //
+                        hasSource("Periodenauszug13.txt"), //
+                        hasNote("WbUM 45645676"), //
+                        hasAmount("EUR", 267.44), hasGrossValue("EUR", 267.44), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // assert transaction
         assertThat(results, hasItem(deposit(hasDate("2024-12-19"), hasAmount("EUR", 105.00), //
@@ -5770,14 +5941,23 @@ public class BaaderBankPDFExtractorTest
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug14.txt"), errors);
 
         assertThat(errors, empty());
-        assertThat(countSecurities(results), is(0L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(1L));
+        assertThat(countBuySell(results), is(1L));
         assertThat(countAccountTransactions(results), is(3L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(0L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(3));
+        assertThat(results.size(), is(5));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("US8361001071")), //
+                        hasDate("2025-01-30"), hasShares(15.00), //
+                        hasSource("Periodenauszug14.txt"), //
+                        hasNote("sVbf 64511022990"), //
+                        hasAmount("EUR", 208.50), hasGrossValue("EUR", 208.50), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // assert transaction
         assertThat(results, hasItem(deposit(hasDate("2025-01-09"), hasAmount("EUR", 100.00), //
@@ -5802,14 +5982,41 @@ public class BaaderBankPDFExtractorTest
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug15.txt"), errors);
 
         assertThat(errors, empty());
-        assertThat(countSecurities(results), is(5L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(17L));
+        assertThat(countBuySell(results), is(16L));
         assertThat(countAccountTransactions(results), is(5L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(0L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(10));
+        assertThat(results.size(), is(38));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("US5801351017")), //
+                        hasDate("2024-09-03"), hasShares(0.192), //
+                        hasSource("Periodenauszug15.txt"), //
+                        hasNote("WWUM 00359373414"), //
+                        hasAmount("EUR", 49.97), hasGrossValue("EUR", 49.97), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("US92826C8394")), //
+                        hasDate("2024-09-03"), hasShares(0.393), //
+                        hasSource("Periodenauszug15.txt"), //
+                        hasNote("WWUM 00359402876"), //
+                        hasAmount("EUR", 99.86), hasGrossValue("EUR", 99.86), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("SE0015961909")), //
+                        hasDate("2024-09-30"), hasShares(10.82), //
+                        hasSource("Periodenauszug15.txt"), //
+                        hasNote("WWUM 00369473509"), //
+                        hasAmount("EUR", 100.00), hasGrossValue("EUR", 100.00), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // check dividend transactions
         assertThat(results, hasItem(dividend( //
@@ -5899,14 +6106,32 @@ public class BaaderBankPDFExtractorTest
 
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug17.txt"), errors);
 
-        assertThat(countSecurities(results), is(0L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(3L));
+        assertThat(countBuySell(results), is(3L));
         assertThat(countAccountTransactions(results), is(1L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(0L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(1));
+        assertThat(results.size(), is(7));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("IE00BYVJRP78")), //
+                        hasDate("2021-09-07"), hasShares(57.00), //
+                        hasSource("Periodenauszug17.txt"), //
+                        hasNote("WWUM 54066861"), //
+                        hasAmount("EUR", 432.57), hasGrossValue("EUR", 432.57), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("IE00BYX2JD69")), //
+                        hasDate("2021-09-07"), hasShares(145.00), //
+                        hasSource("Periodenauszug17.txt"), //
+                        hasNote("WWUM 54067668"), //
+                        hasAmount("EUR", 1314.57), hasGrossValue("EUR", 1314.57), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // assert transaction
         assertThat(results, hasItem(deposit(hasDate("2021-09-06"), hasAmount("EUR", 2200.00), //
@@ -6521,14 +6746,23 @@ public class BaaderBankPDFExtractorTest
         var results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "Periodenauszug18.txt"), errors);
 
         assertThat(errors, empty());
-        assertThat(countSecurities(results), is(0L));
-        assertThat(countBuySell(results), is(0L));
+        assertThat(countSecurities(results), is(1L));
+        assertThat(countBuySell(results), is(1L));
         assertThat(countAccountTransactions(results), is(3L));
         assertThat(countAccountTransfers(results), is(0L));
         assertThat(countItemsWithFailureMessage(results), is(0L));
         assertThat(countSkippedItems(results), is(0L));
-        assertThat(results.size(), is(3));
+        assertThat(results.size(), is(5));
         new AssertImportActions().check(results, "EUR");
+
+        // check buy/sell transaction
+        assertThat(results, hasItem(purchase( //
+                        hasSecurity(hasIsin("IE00BK5BQT80")), //
+                        hasDate("2026-05-07"), hasShares(63.00), //
+                        hasSource("Periodenauszug18.txt"), //
+                        hasNote("WWUM 00659846264"), //
+                        hasAmount("EUR", 9954.00), hasGrossValue("EUR", 9954.00), //
+                        hasTaxes("EUR", 0.00), hasFees("EUR", 0.00))));
 
         // check deposit transactions
         assertThat(results, hasItem(deposit( //
