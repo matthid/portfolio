@@ -138,12 +138,60 @@ public final class HeadlessPDFImportTool
         ClientFactory.saveAs(client, options.outputFile, null, EnumSet.of(SaveFlag.XML));
         result.savedFile = options.outputFile;
 
+        if (options.csvOutputDir != null)
+            exportCsvOutput(client, options.csvOutputDir, result);
+
         Client reloaded = ClientFactory.load(options.outputFile, null, new NullProgressMonitor());
         result.reloadedAccounts = reloaded.getAccounts().size();
         result.reloadedPortfolios = reloaded.getPortfolios().size();
         result.reloadedSecurities = reloaded.getSecurities().size();
 
         return result;
+    }
+
+    /**
+     * Writes the imported transactions as CSV files in the format of the
+     * Portfolio Performance CSV export so that they can be imported into an
+     * unmodified installation via File → Import → CSV File.
+     */
+    private static void exportCsvOutput(Client client, File directory, Result result) throws IOException
+    {
+        if (!directory.exists() && !directory.mkdirs())
+            throw new IOException("Failed to create CSV output directory " + directory.getPath()); //$NON-NLS-1$
+
+        // buy/sell transactions are exported with the portfolio transactions;
+        // exclude them here to avoid duplicates when both files are imported
+        List<name.abuchen.portfolio.model.Transaction> accountTransactions = new ArrayList<>();
+        for (Account account : client.getAccounts())
+        {
+            for (AccountTransaction transaction : account.getTransactions())
+            {
+                if (transaction.getType() == AccountTransaction.Type.BUY //
+                                || transaction.getType() == AccountTransaction.Type.SELL)
+                    continue;
+                accountTransactions.add(transaction);
+            }
+        }
+
+        List<name.abuchen.portfolio.model.Transaction> portfolioTransactions = new ArrayList<>();
+        for (Portfolio portfolio : client.getPortfolios())
+            portfolioTransactions.addAll(portfolio.getTransactions());
+
+        var exporter = new name.abuchen.portfolio.datatransfer.csv.exporter.CSVExporter();
+
+        if (!accountTransactions.isEmpty())
+        {
+            var file = new File(directory, "account-transactions.csv"); //$NON-NLS-1$
+            exporter.exportTransactions(file, accountTransactions);
+            result.addCsvFile(file);
+        }
+
+        if (!portfolioTransactions.isEmpty())
+        {
+            var file = new File(directory, "portfolio-transactions.csv"); //$NON-NLS-1$
+            exporter.exportTransactions(file, portfolioTransactions);
+            result.addCsvFile(file);
+        }
     }
 
     private static void importItems(Extractor extractor, List<Extractor.Item> items, List<ImportAction> checks,
@@ -625,6 +673,7 @@ public final class HeadlessPDFImportTool
         private File clientFile;
         private File outputFile;
         private File reportFile;
+        private File csvOutputDir;
         private String baseCurrency;
         private String accountName = DEFAULT_ACCOUNT;
         private String portfolioName = DEFAULT_PORTFOLIO;
@@ -663,6 +712,9 @@ public final class HeadlessPDFImportTool
                         break;
                     case "--report":
                         options.reportFile = new File(required(args, ++ii, arg));
+                        break;
+                    case "--csv-output":
+                        options.csvOutputDir = new File(required(args, ++ii, arg));
                         break;
                     case "--base-currency":
                         options.baseCurrency = required(args, ++ii, arg);
@@ -1013,6 +1065,7 @@ public final class HeadlessPDFImportTool
         private int reloadedAccounts;
         private int reloadedPortfolios;
         private int reloadedSecurities;
+        private final List<File> csvFiles = new ArrayList<>();
 
         private Result(Options options, Client client)
         {
@@ -1024,6 +1077,11 @@ public final class HeadlessPDFImportTool
         {
             rejected++;
             lines.add(MessageFormat.format("ERROR\t{0}\t{1}", file.getPath(), error.getMessage())); //$NON-NLS-1$
+        }
+
+        private void addCsvFile(File file)
+        {
+            csvFiles.add(file);
         }
 
         private void addItemStatus(Extractor extractor, Extractor.Item item, Code code, String message)
@@ -1136,6 +1194,8 @@ public final class HeadlessPDFImportTool
                 out.append("Portfolios: ").append(String.valueOf(client.getPortfolios().size())).append('\n'); //$NON-NLS-1$
                 out.append("Securities: ").append(String.valueOf(client.getSecurities().size())).append('\n'); //$NON-NLS-1$
                 out.append("Saved: ").append(savedFile != null ? savedFile.getPath() : "").append('\n'); //$NON-NLS-1$ //$NON-NLS-2$
+                for (File csvFile : csvFiles)
+                    out.append("CSV output: ").append(csvFile.getPath()).append('\n'); //$NON-NLS-1$
                 out.append("Reloaded accounts: ").append(String.valueOf(reloadedAccounts)).append('\n'); //$NON-NLS-1$
                 out.append("Reloaded portfolios: ").append(String.valueOf(reloadedPortfolios)).append('\n'); //$NON-NLS-1$
                 out.append("Reloaded securities: ").append(String.valueOf(reloadedSecurities)).append('\n'); //$NON-NLS-1$

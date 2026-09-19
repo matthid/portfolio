@@ -81,6 +81,7 @@ public class HeadlessPDFImportToolTest
         addIfSet(args, "--client", "portfolio.import.client"); //$NON-NLS-1$ //$NON-NLS-2$
         add(args, "--output", output); //$NON-NLS-1$
         addIfSet(args, "--report", "portfolio.import.report"); //$NON-NLS-1$ //$NON-NLS-2$
+        addIfSet(args, "--csv-output", "portfolio.import.csvOutput"); //$NON-NLS-1$ //$NON-NLS-2$
         addIfSet(args, "--base-currency", "portfolio.import.baseCurrency"); //$NON-NLS-1$ //$NON-NLS-2$
         addIfSet(args, "--account", "portfolio.import.account"); //$NON-NLS-1$ //$NON-NLS-2$
         addIfSet(args, "--portfolio", "portfolio.import.portfolio"); //$NON-NLS-1$ //$NON-NLS-2$
